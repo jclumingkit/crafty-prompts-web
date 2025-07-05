@@ -7,6 +7,76 @@ export type Json =
   | Json[]
 
 export type Database = {
+  prompt_schema: {
+    Tables: {
+      custom_prompts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          label: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          label: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          label?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      variables: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          updated_at: string | null
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          updated_at?: string | null
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          updated_at?: string | null
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       errors: {
@@ -33,6 +103,49 @@ export type Database = {
           id?: string
           url_path?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      get_paginated_variables: {
+        Args: {
+          fetch_user_id: string
+          fetch_limit?: number
+          search?: string
+          cursor?: string
+          direction?: string
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  user_schema: {
+    Tables: {
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -158,7 +271,13 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  prompt_schema: {
+    Enums: {},
+  },
   public: {
+    Enums: {},
+  },
+  user_schema: {
     Enums: {},
   },
 } as const

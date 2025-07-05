@@ -40,7 +40,7 @@ export default function Page() {
                 </li>
                 <li className="flex items-start">
                   <span className="inline-block w-1.5 h-1.5 bg-muted-foreground rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                  You will redirected to your dashboard after confirmation
+                  You will be redirected to your dashboard after confirmation
                 </li>
               </ul>
             </div>
