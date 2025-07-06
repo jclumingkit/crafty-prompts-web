@@ -18,15 +18,22 @@ export type VariableTableInsert =
 export type VariableTableUpdate =
   Database["prompt_schema"]["Tables"]["variables"]["Update"];
 
-export type CustomPromptTableRow =
-  Database["prompt_schema"]["Tables"]["custom_prompts"]["Row"];
-export type CustomPromptTableInsert =
-  Database["prompt_schema"]["Tables"]["custom_prompts"]["Insert"];
-export type CustomPromptTableUpdate =
-  Database["prompt_schema"]["Tables"]["custom_prompts"]["Update"];
+export type PromptTableRow =
+  Database["prompt_schema"]["Tables"]["prompts"]["Row"];
+export type PromptTableInsert =
+  Database["prompt_schema"]["Tables"]["prompts"]["Insert"];
+export type PromptTableUpdate =
+  Database["prompt_schema"]["Tables"]["prompts"]["Update"];
 
 export type GetVariables = {
   data: VariableTableRow[];
+  hasMore: boolean;
+  nextCursor: string | null;
+  prevCursor: string | null;
+};
+
+export type GetPrompts = {
+  data: PromptTableRow[];
   hasMore: boolean;
   nextCursor: string | null;
   prevCursor: string | null;

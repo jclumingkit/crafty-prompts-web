@@ -1,6 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "../database";
-import { ErrorTableInsert, VariableTableInsert } from "../types";
+import {
+  ErrorTableInsert,
+  PromptTableInsert,
+  VariableTableInsert,
+} from "../types";
 
 export const createErrorLog = async (
   supabase: SupabaseClient<Database>,
@@ -17,6 +21,18 @@ export const createVariable = async (
   const { error } = await supabase
     .schema("prompt_schema")
     .from("variables")
+    .insert(params);
+
+  if (error) throw error;
+};
+
+export const createPrompt = async (
+  supabase: SupabaseClient<Database>,
+  params: PromptTableInsert
+) => {
+  const { error } = await supabase
+    .schema("prompt_schema")
+    .from("prompts")
     .insert(params);
 
   if (error) throw error;

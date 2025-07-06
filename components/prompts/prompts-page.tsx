@@ -1,19 +1,19 @@
 "use client";
 
-import { getVariablesQueryKey } from "@/app/(with-logged-in-user)/variables/queries";
+import { getPromptsQueryKey } from "@/app/(with-logged-in-user)/prompts/queries";
 import {
-  VARIABLE_FORM_DEFAULT_VALUES,
-  VariableFormValues,
-  variableSchema,
-} from "@/schemas/variable-schema";
+  PROMPT_FORM_DEFAULT_VALUES,
+  PromptFormValues,
+  promptSchema,
+} from "@/schemas/prompt-schema";
 import useAuthStore from "@/stores/use-auth-store";
 import { TABLE_ROW_LIMIT } from "@/utils/constant";
 import { standardDateFormat } from "@/utils/functions";
-import { getVariables } from "@/utils/supabase/api/get";
-import { createErrorLog, createVariable } from "@/utils/supabase/api/post";
-import { updateVariable } from "@/utils/supabase/api/update";
+import { getPrompts } from "@/utils/supabase/api/get";
+import { createErrorLog, createPrompt } from "@/utils/supabase/api/post";
+import { updatePrompt } from "@/utils/supabase/api/update";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
-import { VariableTableRow } from "@/utils/supabase/types";
+import { PromptTableRow } from "@/utils/supabase/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useInfiniteQuery,
@@ -22,26 +22,24 @@ import {
 } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDebounce } from "@uidotdev/usehooks";
-import { Edit, Info, Plus, Search, X } from "lucide-react";
+import { Edit, Plus, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import DataTable from "../ui/datatable";
 import { Input } from "../ui/input";
-import DeleteConfirmationDialog from "./delete-confirmation-dialog";
-import VariableFormDialog from "./variable-form-dialog";
+import PromptForm from "./prompt-form";
 
-export default function VariablesPage() {
+export default function PromptsPage() {
   const { user } = useAuthStore();
   const supabase = createSupabaseBrowserClient();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPromptForm, setShowPromptForm] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
     null
@@ -49,7 +47,7 @@ export default function VariablesPage() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const debouncedSearchQuery = useDebounce(searchTerm, 300);
   const [isEdit, setIsEdit] = useState(false);
-  const queryKey = getVariablesQueryKey(debouncedSearchQuery);
+  const queryKey = getPromptsQueryKey(debouncedSearchQuery);
 
   const {
     data,
@@ -67,7 +65,7 @@ export default function VariablesPage() {
     }: {
       pageParam: { cursor: string | null; direction: string };
     }) =>
-      getVariables(supabase, {
+      getPrompts(supabase, {
         userId: `${user?.id}`,
         limit: TABLE_ROW_LIMIT,
         search: debouncedSearchQuery,
@@ -89,14 +87,14 @@ export default function VariablesPage() {
   });
 
   // Get the current page data
-  const { variables, hasMore } = useMemo(() => {
+  const { prompts, hasMore } = useMemo(() => {
     if (!data?.pages) {
-      return { variables: [], hasMore: false };
+      return { prompts: [], hasMore: false };
     }
 
     const currentPage = data.pages[currentPageIndex];
     return {
-      variables: currentPage?.data ?? [],
+      prompts: currentPage?.data ?? [],
       hasMore: currentPage?.hasMore ?? false,
     };
   }, [data, currentPageIndex]);
@@ -135,66 +133,62 @@ export default function VariablesPage() {
     });
   };
 
-  const form = useForm<VariableFormValues>({
-    resolver: zodResolver(variableSchema),
-    defaultValues: VARIABLE_FORM_DEFAULT_VALUES,
+  const form = useForm<PromptFormValues>({
+    resolver: zodResolver(promptSchema),
+    defaultValues: PROMPT_FORM_DEFAULT_VALUES,
   });
 
-  const addVariableMutation = useMutation({
-    mutationFn: async (data: VariableFormValues) => {
+  const addPromptMutation = useMutation({
+    mutationFn: async (data: PromptFormValues) => {
       if (!user) throw new Error("User is not defined");
-      return await createVariable(supabase, { ...data, user_id: user.id });
+      return await createPrompt(supabase, { ...data, user_id: user.id });
     },
     onSuccess: () => {
-      toast.success("Variable added successfully.");
-      closeModal();
+      toast.success("Prompt saved successfully.");
+      hidePrompt();
     },
     onError: (e) => {
-      if (e.message.includes("duplicate")) {
-        form.setError("label", { message: "Label already exists." });
-      } else {
-        toast.error("Failed to add variable.");
-        handleErrors(JSON.stringify(e), "addVariableMutation");
-      }
+      toast.error("Failed to save prompt.");
+      handleErrors(JSON.stringify(e), "addPromptMutation");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  const updateVariableMutation = useMutation({
-    mutationFn: async (data: VariableFormValues) => {
-      return await updateVariable(supabase, data);
+  const updatePromptMutation = useMutation({
+    mutationFn: async (data: PromptFormValues) => {
+      return await updatePrompt(supabase, data);
     },
     onSuccess: () => {
-      toast.success("Variable updated successfully.");
-      closeModal();
+      toast.success("Prompt updated successfully.");
+      hidePrompt();
     },
     onError: (e) => {
-      toast.error("Failed to update variable.");
-      handleErrors(JSON.stringify(e), "updateVariableMutation");
+      toast.error("Failed to update prompt.");
+      handleErrors(JSON.stringify(e), "updatePromptMutation");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  const handleOpenModal = (variable?: VariableTableRow) => {
+  const handleOpenModal = (variable?: PromptTableRow) => {
     if (variable) {
       form.reset(variable);
       setIsEdit(true);
     }
-    setIsModalOpen(true);
+    setShowPromptForm(true);
   };
 
-  const closeModal = () => {
-    form.reset(VARIABLE_FORM_DEFAULT_VALUES);
+  const hidePrompt = () => {
+    form.reset(PROMPT_FORM_DEFAULT_VALUES);
     setIsEdit(false);
-    setIsModalOpen(false);
+    setShowPromptForm(false);
   };
 
-  const onSubmit = (data: VariableFormValues) => {
-    if (isEdit) updateVariableMutation.mutate(data);
-    else addVariableMutation.mutate(data);
+  const onSubmit = (data: PromptFormValues) => {
+    if (isEdit) updatePromptMutation.mutate(data);
+    else addPromptMutation.mutate(data);
   };
 
-  const deleteVariableMutation = useMutation({
+  const deletePromptMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/variables/${id}`, {
         method: "DELETE",
@@ -208,7 +202,7 @@ export default function VariablesPage() {
     },
     onError: (e) => {
       toast.error("Failed to delete variable.");
-      handleErrors(JSON.stringify(e), "deleteVariableMutation");
+      handleErrors(JSON.stringify(e), "deletePromptMutation");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
@@ -225,13 +219,12 @@ export default function VariablesPage() {
 
   const confirmDelete = () => {
     if (selectedVariableId) {
-      deleteVariableMutation.mutate(selectedVariableId);
+      deletePromptMutation.mutate(selectedVariableId);
     }
   };
 
-  const columns: ColumnDef<VariableTableRow>[] = [
+  const columns: ColumnDef<PromptTableRow>[] = [
     { accessorKey: "label", header: "Label" },
-    { accessorKey: "value", header: "Value" },
     {
       accessorKey: "created_at",
       header: "Created At",
@@ -271,84 +264,71 @@ export default function VariablesPage() {
 
   return (
     <>
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Variables</h1>
-        <p className="text-muted-foreground">
-          Manage your prompt variables here.
-        </p>
-      </div>
-
-      <Alert>
-        <Info />
-        <AlertTitle>How to use variables</AlertTitle>
-        <AlertDescription>
-          Use {`{{variable_label}}`} in your prompts. The system will
-          automatically replace it with its value.
-        </AlertDescription>
-      </Alert>
-
-      <Card>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4 flex-wrap">
-            <div className="relative min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search variables..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button onClick={() => handleOpenModal()}>
-              <Plus /> Add Variable
-            </Button>
-          </div>
-
-          <DataTable
-            columns={columns}
-            data={variables}
+      {showPromptForm ? (
+        <FormProvider {...form}>
+          <PromptForm
+            isOpen={showPromptForm}
+            onClose={hidePrompt}
+            onSubmit={onSubmit}
             isLoading={
-              status === "pending" ||
-              isFetchingNextPage ||
-              isFetchingPreviousPage
+              addPromptMutation.isPending || updatePromptMutation.isPending
             }
+            isEdit={isEdit}
           />
-
-          <div className="mt-1 flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={handlePrev}
-              disabled={!canGoPrev || isFetchingPreviousPage}
-            >
-              Prev
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleNext}
-              disabled={!canGoNext || isFetchingNextPage}
-            >
-              Next
-            </Button>
+        </FormProvider>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">Prompts</h1>
+            <p className="text-muted-foreground">Manage your prompts here.</p>
           </div>
-        </CardContent>
-      </Card>
-      <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onConfirm={confirmDelete}
-        onCancel={closeDeleteDialog}
-        isLoading={deleteVariableMutation.isPending}
-      />
-      <FormProvider {...form}>
-        <VariableFormDialog
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          onSubmit={onSubmit}
-          isLoading={
-            addVariableMutation.isPending || updateVariableMutation.isPending
-          }
-          isEdit={isEdit}
-        />
-      </FormProvider>
+          <Card>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4 flex-wrap">
+                <div className="relative min-w-[300px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search prompt..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button onClick={() => handleOpenModal()}>
+                  <Plus /> Add Prompt
+                </Button>
+              </div>
+
+              <DataTable
+                columns={columns}
+                data={prompts}
+                isLoading={
+                  status === "pending" ||
+                  isFetchingNextPage ||
+                  isFetchingPreviousPage
+                }
+              />
+
+              <div className="mt-1 flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={handlePrev}
+                  disabled={!canGoPrev || isFetchingPreviousPage}
+                >
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleNext}
+                  disabled={!canGoNext || isFetchingNextPage}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </>
   );
 }

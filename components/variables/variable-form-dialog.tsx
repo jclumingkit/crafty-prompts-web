@@ -60,6 +60,9 @@ export default function VariableFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Label</FormLabel>
+                  <FormDescription>
+                    This will be used as {`{{label}}`} in your prompts.
+                  </FormDescription>
                   <FormControl>
                     <Input
                       placeholder="Enter variable label (e.g., productName)"
@@ -67,9 +70,7 @@ export default function VariableFormDialog({
                       disabled={isLoading}
                     />
                   </FormControl>
-                  <FormDescription>
-                    This will be used as {`{{label}}`} in your prompts.
-                  </FormDescription>
+
                   <FormMessage />
                 </FormItem>
               )}

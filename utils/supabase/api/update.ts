@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "../database";
-import { VariableTableUpdate } from "../types";
+import { PromptTableUpdate, VariableTableUpdate } from "../types";
 
 export const updateVariable = async (
   supabase: SupabaseClient<Database>,
@@ -9,6 +9,18 @@ export const updateVariable = async (
   const { error } = await supabase
     .schema("prompt_schema")
     .from("variables")
+    .update(params)
+    .eq("id", `${params.id}`);
+  if (error) throw error;
+};
+
+export const updatePrompt = async (
+  supabase: SupabaseClient<Database>,
+  params: PromptTableUpdate
+) => {
+  const { error } = await supabase
+    .schema("prompt_schema")
+    .from("prompts")
     .update(params)
     .eq("id", `${params.id}`);
   if (error) throw error;

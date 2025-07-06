@@ -9,12 +9,13 @@ export type Json =
 export type Database = {
   prompt_schema: {
     Tables: {
-      custom_prompts: {
+      prompts: {
         Row: {
           content: string
           created_at: string
           id: string
           label: string
+          search_vector: unknown | null
           updated_at: string | null
           user_id: string
         }
@@ -23,6 +24,7 @@ export type Database = {
           created_at?: string
           id?: string
           label: string
+          search_vector?: unknown | null
           updated_at?: string | null
           user_id: string
         }
@@ -31,6 +33,7 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string
+          search_vector?: unknown | null
           updated_at?: string | null
           user_id?: string
         }
@@ -41,6 +44,7 @@ export type Database = {
           created_at: string
           id: string
           label: string
+          search_vector: unknown | null
           updated_at: string | null
           user_id: string
           value: string
@@ -49,6 +53,7 @@ export type Database = {
           created_at?: string
           id?: string
           label: string
+          search_vector?: unknown | null
           updated_at?: string | null
           user_id: string
           value: string
@@ -57,6 +62,7 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string
+          search_vector?: unknown | null
           updated_at?: string | null
           user_id?: string
           value?: string
@@ -111,6 +117,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_paginated_prompts: {
+        Args: {
+          fetch_user_id: string
+          fetch_limit?: number
+          search?: string
+          cursor?: string
+          direction?: string
+        }
+        Returns: Json
+      }
       get_paginated_variables: {
         Args: {
           fetch_user_id: string
