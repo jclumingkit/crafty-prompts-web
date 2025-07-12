@@ -1,28 +1,26 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "../database";
-import { PromptTableUpdate, VariableTableUpdate } from "../types";
 
-export const updateVariable = async (
+export const deleteVariable = async (
   supabase: SupabaseClient<Database>,
-  params: VariableTableUpdate
+  variableId: string
 ) => {
-  console.log(params);
   const { error } = await supabase
     .schema("prompt_schema")
     .from("variables")
-    .update(params)
-    .eq("id", `${params.id}`);
+    .delete()
+    .eq("id", variableId);
   if (error) throw error;
 };
 
-export const updatePrompt = async (
+export const deletePrompt = async (
   supabase: SupabaseClient<Database>,
-  params: PromptTableUpdate
+  promptId: string
 ) => {
   const { error } = await supabase
     .schema("prompt_schema")
     .from("prompts")
-    .update(params)
-    .eq("id", `${params.id}`);
+    .delete()
+    .eq("id", promptId);
   if (error) throw error;
 };

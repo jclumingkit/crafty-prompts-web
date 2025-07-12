@@ -294,7 +294,9 @@ BEGIN
   -- Set cursors based on the final data
   IF jsonb_array_length(data) > 0 THEN
     nextCursor := (data->(jsonb_array_length(data) - 1)->>'created_at')::timestamptz;
-    prevCursor := (data->0->>'created_at')::timestamptz;
+    IF cursor IS NOT NULL THEN 
+      prevCursor := (data->0->>'created_at')::timestamptz;
+    END IF;
   END IF;
 
   -- Build final result

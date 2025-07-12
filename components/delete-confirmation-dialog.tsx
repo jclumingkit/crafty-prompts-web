@@ -1,4 +1,4 @@
-import { Button } from "../ui/button";
+import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,13 +6,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
+} from "./ui/dialog";
 
 type Props = {
   isOpen: boolean;
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  title?: string;
+  description?: string;
 };
 
 export default function DeleteConfirmationDialog({
@@ -20,16 +22,15 @@ export default function DeleteConfirmationDialog({
   onConfirm,
   onCancel,
   isLoading,
+  title = "Confirm Delete",
+  description = "Are you sure you want to delete this? This action cannot be undone.",
 }: Props) {
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this variable? This action cannot be
-            undone.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel} disabled={isLoading}>

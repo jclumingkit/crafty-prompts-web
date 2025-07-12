@@ -9,6 +9,7 @@ import {
 import useAuthStore from "@/stores/use-auth-store";
 import { TABLE_ROW_LIMIT } from "@/utils/constant";
 import { standardDateFormat } from "@/utils/functions";
+import { deletePrompt } from "@/utils/supabase/api/delete";
 import { getPrompts } from "@/utils/supabase/api/get";
 import { createErrorLog, createPrompt } from "@/utils/supabase/api/post";
 import { updatePrompt } from "@/utils/supabase/api/update";
@@ -22,11 +23,13 @@ import {
 } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDebounce } from "@uidotdev/usehooks";
+import dayjs from "dayjs";
 import { Edit, Plus, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import DeleteConfirmationDialog from "../delete-confirmation-dialog";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import DataTable from "../ui/datatable";
@@ -138,33 +141,26 @@ export default function PromptsPage() {
     defaultValues: PROMPT_FORM_DEFAULT_VALUES,
   });
 
-  const addPromptMutation = useMutation({
+  const promptMutation = useMutation({
     mutationFn: async (data: PromptFormValues) => {
       if (!user) throw new Error("User is not defined");
-      return await createPrompt(supabase, { ...data, user_id: user.id });
+      return isEdit
+        ? await updatePrompt(supabase, {
+            ...data,
+            updated_at: dayjs().toISOString(),
+          })
+        : await createPrompt(supabase, { ...data, user_id: user.id });
     },
     onSuccess: () => {
-      toast.success("Prompt saved successfully.");
-      hidePrompt();
+      toast.success(`Prompt ${isEdit ? "updated" : "created"} successfully.`);
+      hidePrompt({});
     },
     onError: (e) => {
       toast.error("Failed to save prompt.");
-      handleErrors(JSON.stringify(e), "addPromptMutation");
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey }),
-  });
-
-  const updatePromptMutation = useMutation({
-    mutationFn: async (data: PromptFormValues) => {
-      return await updatePrompt(supabase, data);
-    },
-    onSuccess: () => {
-      toast.success("Prompt updated successfully.");
-      hidePrompt();
-    },
-    onError: (e) => {
-      toast.error("Failed to update prompt.");
-      handleErrors(JSON.stringify(e), "updatePromptMutation");
+      handleErrors(
+        JSON.stringify(e),
+        isEdit ? "editPromptMutation" : "createPromptMutation"
+      );
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
@@ -177,24 +173,25 @@ export default function PromptsPage() {
     setShowPromptForm(true);
   };
 
-  const hidePrompt = () => {
-    form.reset(PROMPT_FORM_DEFAULT_VALUES);
-    setIsEdit(false);
-    setShowPromptForm(false);
+  const hidePrompt = ({ resetAll = false }: { resetAll?: boolean }) => {
+    if (isEdit && !showPromptForm) {
+      setIsEdit(false);
+    }
+
+    if (resetAll) {
+      form.reset(PROMPT_FORM_DEFAULT_VALUES);
+      setShowPromptForm(false);
+      setIsEdit(false);
+    }
   };
 
   const onSubmit = (data: PromptFormValues) => {
-    if (isEdit) updatePromptMutation.mutate(data);
-    else addPromptMutation.mutate(data);
+    promptMutation.mutate(data);
   };
 
   const deletePromptMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/variables/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Something went wrong.");
-      return await response.json();
+      return await deletePrompt(supabase, id);
     },
     onSuccess: () => {
       toast.success("Variable deleted successfully.");
@@ -235,7 +232,7 @@ export default function PromptsPage() {
       header: "Updated At",
       cell: ({ row }) =>
         row.original.updated_at
-          ? standardDateFormat(row.original.created_at)
+          ? standardDateFormat(row.original.updated_at)
           : "Not Updated",
     },
     {
@@ -268,12 +265,9 @@ export default function PromptsPage() {
         <FormProvider {...form}>
           <PromptForm
             isOpen={showPromptForm}
-            onClose={hidePrompt}
+            onClose={() => hidePrompt({ resetAll: true })}
             onSubmit={onSubmit}
-            isLoading={
-              addPromptMutation.isPending || updatePromptMutation.isPending
-            }
-            isEdit={isEdit}
+            isLoading={promptMutation.isPending}
           />
         </FormProvider>
       ) : (
@@ -327,6 +321,12 @@ export default function PromptsPage() {
               </div>
             </CardContent>
           </Card>
+          <DeleteConfirmationDialog
+            isOpen={deleteDialogOpen}
+            onConfirm={confirmDelete}
+            onCancel={closeDeleteDialog}
+            isLoading={deletePromptMutation.isPending}
+          />
         </>
       )}
     </>

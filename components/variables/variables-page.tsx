@@ -9,6 +9,7 @@ import {
 import useAuthStore from "@/stores/use-auth-store";
 import { TABLE_ROW_LIMIT } from "@/utils/constant";
 import { standardDateFormat } from "@/utils/functions";
+import { deleteVariable } from "@/utils/supabase/api/delete";
 import { getVariables } from "@/utils/supabase/api/get";
 import { createErrorLog, createVariable } from "@/utils/supabase/api/post";
 import { updateVariable } from "@/utils/supabase/api/update";
@@ -22,17 +23,18 @@ import {
 } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDebounce } from "@uidotdev/usehooks";
+import dayjs from "dayjs";
 import { Edit, Info, Plus, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import DeleteConfirmationDialog from "../delete-confirmation-dialog";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import DataTable from "../ui/datatable";
 import { Input } from "../ui/input";
-import DeleteConfirmationDialog from "./delete-confirmation-dialog";
 import VariableFormDialog from "./variable-form-dialog";
 
 export default function VariablesPage() {
@@ -140,10 +142,15 @@ export default function VariablesPage() {
     defaultValues: VARIABLE_FORM_DEFAULT_VALUES,
   });
 
-  const addVariableMutation = useMutation({
+  const variableMutation = useMutation({
     mutationFn: async (data: VariableFormValues) => {
       if (!user) throw new Error("User is not defined");
-      return await createVariable(supabase, { ...data, user_id: user.id });
+      return isEdit
+        ? await updateVariable(supabase, {
+            ...data,
+            updated_at: dayjs().toISOString(),
+          })
+        : await createVariable(supabase, { ...data, user_id: user.id });
     },
     onSuccess: () => {
       toast.success("Variable added successfully.");
@@ -156,21 +163,6 @@ export default function VariablesPage() {
         toast.error("Failed to add variable.");
         handleErrors(JSON.stringify(e), "addVariableMutation");
       }
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey }),
-  });
-
-  const updateVariableMutation = useMutation({
-    mutationFn: async (data: VariableFormValues) => {
-      return await updateVariable(supabase, data);
-    },
-    onSuccess: () => {
-      toast.success("Variable updated successfully.");
-      closeModal();
-    },
-    onError: (e) => {
-      toast.error("Failed to update variable.");
-      handleErrors(JSON.stringify(e), "updateVariableMutation");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
@@ -190,17 +182,12 @@ export default function VariablesPage() {
   };
 
   const onSubmit = (data: VariableFormValues) => {
-    if (isEdit) updateVariableMutation.mutate(data);
-    else addVariableMutation.mutate(data);
+    variableMutation.mutate(data);
   };
 
   const deleteVariableMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/variables/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Something went wrong.");
-      return await response.json();
+      return await deleteVariable(supabase, id);
     },
     onSuccess: () => {
       toast.success("Variable deleted successfully.");
@@ -242,7 +229,7 @@ export default function VariablesPage() {
       header: "Updated At",
       cell: ({ row }) =>
         row.original.updated_at
-          ? standardDateFormat(row.original.created_at)
+          ? standardDateFormat(row.original.updated_at)
           : "Not Updated",
     },
     {
@@ -343,9 +330,7 @@ export default function VariablesPage() {
           isOpen={isModalOpen}
           onClose={closeModal}
           onSubmit={onSubmit}
-          isLoading={
-            addVariableMutation.isPending || updateVariableMutation.isPending
-          }
+          isLoading={variableMutation.isPending}
           isEdit={isEdit}
         />
       </FormProvider>
