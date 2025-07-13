@@ -63,10 +63,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
       <Card className="w-full max-w-md relative">
         {isLoading && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-lg">
+          <div className="absolute inset-0 bg-muted-background/70 flex items-center justify-center z-10 rounded-lg">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
@@ -117,7 +117,7 @@ export default function LoginPage() {
               <Separator className="w-full" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">
+              <span className="px-2 text-muted-foreground">
                 Or continue with
               </span>
             </div>

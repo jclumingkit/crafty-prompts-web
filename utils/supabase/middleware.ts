@@ -46,10 +46,14 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const url = request.nextUrl.clone();
 
-  if (
+  if (user && pathname.startsWith("/login") && !pathname.startsWith("/api")) {
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  } else if (
     !user &&
     !pathname.startsWith("/login") &&
-    !pathname.startsWith("/auth")
+    !pathname.startsWith("/auth") &&
+    !pathname.startsWith("/api")
   ) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
