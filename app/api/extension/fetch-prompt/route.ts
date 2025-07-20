@@ -1,5 +1,5 @@
 import { handleRouteOptions, withCORS } from "@/utils/functions";
-import { getVariables } from "@/utils/supabase/api/get";
+import { getPromptContent } from "@/utils/supabase/api/get";
 import { createErrorLog } from "@/utils/supabase/api/post";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
@@ -12,8 +12,17 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const promptId = searchParams.get("prompt-id");
   const authHeader = req.headers.get("Authorization");
   const token = authHeader?.replace("Bearer ", "");
+
+  if (!promptId) {
+    return NextResponse.json(
+      { error: "Prompt id is required" },
+      { status: 404 }
+    );
+  }
 
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,26 +45,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const variables = [];
-    let continueFetch = true;
+    const data = await getPromptContent(supabase, {
+      userId: user.id,
+      promptId,
+    });
 
-    while (continueFetch) {
-      const currentBatch = await getVariables(supabase, {
-        userId: user.id,
-        limit: 20,
-        search: "",
-        cursor: undefined,
-        direction: "next",
-      });
-      const { data, hasMore } = currentBatch;
-      variables.push(...data);
-      continueFetch = hasMore;
-    }
+    const content = data?.content ?? "";
 
-    return withCORS({ data: variables });
+    return withCORS({ content });
   } catch (error) {
     await createErrorLog(supabase, {
-      url_path: "/api/extension/fetch-variables",
+      url_path: "/api/extension/fetch-prompt",
       function_name: "handler",
       error_message: JSON.stringify(error),
     });

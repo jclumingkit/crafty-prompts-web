@@ -38,3 +38,10 @@ export type GetPrompts = {
   nextCursor: string | null;
   prevCursor: string | null;
 };
+
+export type GetMinifiedPrompts = {
+  data: Pick<PromptTableRow, "id" | "label">[];
+  hasMore: boolean;
+  nextCursor: string | null;
+  prevCursor: string | null;
+};

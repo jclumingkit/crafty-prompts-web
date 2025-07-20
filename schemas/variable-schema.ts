@@ -9,7 +9,7 @@ export const variableSchema = z.object({
   value: z
     .string()
     .min(1, "Value is required")
-    .max(1000, "Value must be less than 1000 characters"),
+    .max(200, "Value must be less than 200 characters"),
 });
 
 export const VARIABLE_FORM_DEFAULT_VALUES = {

@@ -6,13 +6,14 @@ export const updateVariable = async (
   supabase: SupabaseClient<Database>,
   params: VariableTableUpdate
 ) => {
-  console.log(params);
   const { error } = await supabase
     .schema("prompt_schema")
     .from("variables")
     .update(params)
     .eq("id", `${params.id}`);
   if (error) throw error;
+
+  return params;
 };
 
 export const updatePrompt = async (

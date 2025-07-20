@@ -1,10 +1,15 @@
-import { getPrompts } from "@/utils/supabase/api/get";
+import { handleRouteOptions, withCORS } from "@/utils/functions";
+import { getMinifiedPrompts } from "@/utils/supabase/api/get";
 import { createErrorLog } from "@/utils/supabase/api/post";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export async function OPTIONS() {
+  return handleRouteOptions();
+}
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("Authorization");
@@ -31,27 +36,26 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const variables = [];
+    const prompts = [];
     let continueFetch = true;
 
     while (continueFetch) {
-      const currentBatch = await getPrompts(supabase, {
+      const currentBatch = await getMinifiedPrompts(supabase, {
         userId: user.id,
-        limit: 10,
+        limit: 20,
         search: "",
         cursor: undefined,
         direction: "next",
       });
       const { data, hasMore } = currentBatch;
-      variables.push(...data);
+      prompts.push(...data);
       continueFetch = hasMore;
     }
 
-    return NextResponse.json({ data: variables });
+    return withCORS({ data: prompts });
   } catch (error) {
-    console.log(error);
     await createErrorLog(supabase, {
-      url_path: "/api/extension/fetch-variables",
+      url_path: "/api/extension/fetch-prompts",
       function_name: "handler",
       error_message: JSON.stringify(error),
     });

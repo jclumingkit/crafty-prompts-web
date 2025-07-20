@@ -18,12 +18,15 @@ export const createVariable = async (
   supabase: SupabaseClient<Database>,
   params: VariableTableInsert
 ) => {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .schema("prompt_schema")
     .from("variables")
-    .insert(params);
+    .insert(params)
+    .select();
 
   if (error) throw error;
+
+  return data[0];
 };
 
 export const createPrompt = async (

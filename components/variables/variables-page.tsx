@@ -152,8 +152,12 @@ export default function VariablesPage() {
           })
         : await createVariable(supabase, { ...data, user_id: user.id });
     },
-    onSuccess: () => {
-      toast.success("Variable added successfully.");
+    onSuccess: (data) => {
+      toast.success(`Variable ${isEdit ? "updated" : "added"} successfully.`);
+      window.postMessage(
+        { type: "ADD_OR_UPDATE_VARIABLES", data },
+        window.origin
+      );
       closeModal();
     },
     onError: (e) => {

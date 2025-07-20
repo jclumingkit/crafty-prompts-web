@@ -1,3 +1,4 @@
+import ChromeExtensionInitializer from "@/components/layout/chrome-initializer";
 import { AuthProvider } from "@/providers/supabase-auth-provider";
 import TanstackQueryClientProvider from "@/providers/tanstack-query-client-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
@@ -40,6 +41,7 @@ export default function RootLayout({
           <Toaster />
           <AuthProvider>
             <TanstackQueryClientProvider>
+              <ChromeExtensionInitializer />
               {children}
             </TanstackQueryClientProvider>
           </AuthProvider>

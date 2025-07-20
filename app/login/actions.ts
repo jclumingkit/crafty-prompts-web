@@ -1,6 +1,6 @@
 "use server";
 
-import { baseUrl } from "@/utils/constant";
+import { BASE_URL } from "@/utils/constant";
 import { createErrorLog } from "@/utils/supabase/api/post";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 import { headers as NextHeaders } from "next/headers";
@@ -87,7 +87,7 @@ export async function signInWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${baseUrl}/auth/callback`,
+        redirectTo: `${BASE_URL}/auth/callback`,
       },
     });
 
